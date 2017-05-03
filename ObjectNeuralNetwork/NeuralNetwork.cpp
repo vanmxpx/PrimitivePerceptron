@@ -5,8 +5,3 @@
 NeuralNetwork::NeuralNetwork()
 {
 }
-
-
-NeuralNetwork::~NeuralNetwork()
-{
-}

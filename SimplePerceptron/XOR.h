@@ -7,20 +7,23 @@ class XOR
 {
 public:
 	XOR();
-	~XOR();
 
 	void learn();
 private:
 	void calcGlobalError();
+	void processDigit(string number);
 	double normalizeAnswer(double) const;
 	static double gradFunc(double answer);
-	vec w;
-	vector<double> errors;
-	vec wlast;
+	static double fRand(double fMin, double fMax);
+	double w[15][2][15];
+	mat outputs;
+	mat wlast;
 
-	mat inputs;
 	const double epoches = 10000;
 	double globalError;
 	double learn_rate;
 	int alpha_mom;
+	vector<string> numbers;
+	vector<string> fives;
+	vector<double> errors;
 };

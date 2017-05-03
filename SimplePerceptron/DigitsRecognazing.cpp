@@ -7,7 +7,7 @@ DigitsRecognazing::DigitsRecognazing()
 	:bias(7), epoches(100000)
 {
 	srand(unsigned(time(nullptr)));
-	weights.set_size(15, 1);
+	weights.set_size(15, 3);
 	weights.transform([](double val)
 	{
 		return rand() % 5;
