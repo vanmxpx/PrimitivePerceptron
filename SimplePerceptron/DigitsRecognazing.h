@@ -8,11 +8,11 @@ using namespace arma;
 class DigitsRecognazing
 {
 public:
-	DigitsRecognazing(void);
-	~DigitsRecognazing(void);
+	DigitsRecognazing();
+	~DigitsRecognazing();
 	bool process(string);
 	void learning();
-	void print_res(bool);
+	static void print_res(bool);
 	void step();
 	void print_weights();
 private:
@@ -20,6 +20,6 @@ private:
 	const int epoches;
 	vector<string> numbers;
 	vector<string> fives;
-	vector<int> weights;
+	mat weights;
 };
 

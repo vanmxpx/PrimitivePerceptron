@@ -49,15 +49,13 @@ int run()
     const int epoches = 100000;
     double lr = 1.0;
 
-    mat samples;
-
-		samples << 0.0<< 0.0<< 1.0<< endr
-            <<1.0 <<0.0 <<1.0<<endr
-			<<0.0<< 1.0<< 1.0<<endr
-            <<1.0<< 1.0<< 1.0<<endr;
+	mat samples({ 0.0, 0.0, 1.0,
+				  1.0, 0.0, 1.0,
+				  0.0, 1.0, 1.0,
+				  1.0, 1.0, 1.0 });
+	samples.set_size(4, 3);
     //Answers
-    mat targets;
-	targets << 0.0<< 0.0<< 0.0<< 1.0<< endr;
+	mat targets{ 0.0, 0.0, 0.0, 1.0 };
 
     mat w; 
 	w.set_size(3,1);
