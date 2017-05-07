@@ -4,17 +4,18 @@
 #include "stdafx.h"
 #include "DigitsRecognazing.h"
 #include "ErrorSpread.h"
-#include "XOR.h"
+#include "ErrorSpreadRec.h"
 using namespace std;
 DigitsRecognazing digneu;
 ErrorSpread errspr;
-XOR xor;
+ErrorSpreadRec er;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//digneu.step();
 	//errspr.run();
-	xor.learn();
+	er.learn();
+	er.start();
 
 	system("pause");
 	return 0;
