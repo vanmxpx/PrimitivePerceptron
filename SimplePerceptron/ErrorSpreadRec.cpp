@@ -6,7 +6,7 @@ using namespace arma;
 
 ErrorSpreadRec::ErrorSpreadRec()
 	: outputs(15, 2, fill::zeros), w(15, 15, fill::randu), wout(15, 1, fill::randu ),
-	epoches(10000), learn_rate(0.7), alpha_mom(0.0001)
+	epoches(10000), learn_rate(0.7), alpha_mom(0.00009)
 {
 	numbers = { { 1,0,1,1,1,1,1,1,1,1 },
 	{ 1,0,1,1,0,1,1,1,1,1 },
@@ -106,7 +106,7 @@ void ErrorSpreadRec::learn()
 
 	double err = 1;
 	double res = 0;
-	for (int i = 0; i < epoches && err != 0; i++) //
+	for (int i = 0; i < epoches ; i++) //&& err != 0
 	{
 		for (int k = 0; k < 10; k++)
 		{
