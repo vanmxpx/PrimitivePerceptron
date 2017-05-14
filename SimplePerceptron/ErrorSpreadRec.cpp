@@ -5,8 +5,8 @@
 using namespace arma;
 
 ErrorSpreadRec::ErrorSpreadRec()
-	: outputs(15, 2, fill::zeros), w(15, 15, fill::randu), wout(15, 1, fill::randu ),
-	epoches(10000), learn_rate(0.7), alpha_mom(0.00009)
+	: outputs(15, 2, fill::zeros), w(15, 15, fill::randn), wout(15, fill::randn),
+	epoches(10000), learn_rate(0.3), alpha_mom(0.0001)
 {
 	numbers = { { 1,0,1,1,1,1,1,1,1,1 },
 	{ 1,0,1,1,0,1,1,1,1,1 },
@@ -53,7 +53,7 @@ double ErrorSpreadRec::analize(vec number)
 			tmp += outputs.at(col, 0) * w.at(col, row);
 		outputs.at(row, 1) = normalizeAnswer(tmp);
 	}
-	//cout << outputs;
+
 	//hidden sinapses
 	tmp = 0;
 	for (int row = 0; row < 15; row++)
@@ -62,7 +62,7 @@ double ErrorSpreadRec::analize(vec number)
 	return normalizeAnswer(tmp);
 }
 
-void ErrorSpreadRec::start()
+void ErrorSpreadRec::start_test()
 {
 	//Test
 	for (int i = 0; i < 10; i++)
@@ -84,7 +84,25 @@ void ErrorSpreadRec::start()
 		cout << res << " result" << endl;
 		cout << err << " error" << endl;
 	}
-	system("pause");
+}
+bool ErrorSpreadRec::load_weights()
+{
+	mat loadw;
+	mat loadwout;
+	if (loadw.load("Inputs_weights.mat") &&
+		loadwout.load("Hidden_weights.mat"))
+	{
+		w = loadw;
+		wout = loadwout;
+		return true;
+	}
+	return false;
+}
+bool ErrorSpreadRec::save_weights() const
+{
+
+	return w.save("Inputs_weights.mat") &&
+		wout.save("Hidden_weights.mat");
 }
 
 double ErrorSpreadRec::normalizeAnswer(double answer) const
@@ -102,11 +120,11 @@ void ErrorSpreadRec::learn()
 	mat grad(15, 15);
 	vec gradout(15);
 	mat wlast(15, 15, fill::zeros);
-	mat woutlast(15, 1, fill::zeros);
+	vec woutlast(15, fill::zeros);
 
 	double err = 1;
 	double res = 0;
-	for (int i = 0; i < epoches ; i++) //&& err != 0
+	for (int i = 0; i < epoches; i++) //&& err != 0
 	{
 		for (int k = 0; k < 10; k++)
 		{
@@ -120,24 +138,16 @@ void ErrorSpreadRec::learn()
 			err = pow(isFive - res, 2);
 			//
 #ifndef DEBUG
-			cout << err << endl;
+			//cout << err << endl;
 #endif
 			//Error spread
 			//Calc errors
 			double deltamain = (isFive - res)*gradFunc(res);//OUT
 
-			for (int row = 0; row < 15; row++) //only one weidht binding
+			for (int row = 0; row < 15; row++) //weights, what binded to output neuron
 				delta.at(row, 1) = gradFunc(outputs.at(row, 1)) * wout.at(row) * deltamain;
 
-			//for (int col = 0; col < 15; col++) //for input neirons
-			//{
-			//	delta.at(col, 0) = gradFunc(tmp);
-			//	for (int row = 0; row < 15; row++)
-			//		delta.at(col, 0) += w.at(row, col) * delta.at(col, 1);
-			//}
-
 			//Calc grad
-
 			for (int row = 0; row < 15; row++)
 			{
 				gradout.at(row) = outputs.at(row, 1) * deltamain;
@@ -145,13 +155,20 @@ void ErrorSpreadRec::learn()
 				wout.at(row) += learn_rate * gradout.at(row) + alpha_mom * woutlast.at(row);
 				for (int col = 0; col < 15; col++)
 				{
-					
+
 					grad.at(row, col) = outputs.at(row, 0) * delta.at(col, 1);
 					double tmp1 = learn_rate * grad.at(row, col);
 					double tmp2 = alpha_mom * wlast.at(row, col);
 					w.at(row, col) += tmp1 + tmp2;
 				}
 			}
+			///Uncomment to implement more layers
+			///for (int col = 0; col < 15; col++) //for input neirons
+			///{
+			///	delta.at(col, 0) = gradFunc(tmp);
+			///	for (int row = 0; row < 15; row++)
+			///		delta.at(col, 0) += w.at(row, col) * delta.at(col, 1);
+			///}
 
 			wlast = w;
 			woutlast = wout;

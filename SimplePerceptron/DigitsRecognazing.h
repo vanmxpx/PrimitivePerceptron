@@ -1,25 +1,33 @@
 #pragma once
 
-#include "stdafx.h"
-
 using namespace std;
 using namespace arma;
 
 class DigitsRecognazing
 {
 public:
-	DigitsRecognazing();
-	~DigitsRecognazing();
-	bool process(string);
-	void learning();
-	static void print_res(bool);
-	void step();
-	void print_weights();
+	DigitsRecognazing(int = 45, int = 10000, double = 0.3, double = 1e-6);
+
+	vec analize(vec number);
+	void learn();
+
+	void start_test();
+	bool load_weights();
+	bool save_weights() const;
 private:
-	const int bias;
-	const int epoches;
-	vector<string> numbers;
-	vector<string> fives;
-	mat weights;
+	double normalizeAnswer(double) const;
+	static double gradFunc(double answer);
+
+	vec inputs;
+	vec outputs;
+
+	mat w;
+	mat wout;
+	int neur_count;
+	const double epoches;
+	double learn_rate;
+	double alpha_mom;
+	mat numbers;
+	mat fives;
 };
 

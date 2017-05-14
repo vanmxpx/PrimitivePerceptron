@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\TestModules">
-      <UniqueIdentifier>{de88101c-7a7e-41df-94ad-bb137745ab9e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\TestModules">
-      <UniqueIdentifier>{ace9df5f-e888-437a-ab43-e6691123331d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -30,37 +24,32 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DigitsRecognazing.h">
+    <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ErrorSpreadRec.h">
+    <ClInclude Include="DigitRecognizerWin32.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ErrorSpread.h">
-      <Filter>Header Files\TestModules</Filter>
-    </ClInclude>
-    <ClInclude Include="HiddenLayerPerc.h">
-      <Filter>Header Files\TestModules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimplePerceptron.cpp">
+    <ClCompile Include="DigitRecognizerWin32.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DigitsRecognazing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ErrorSpreadRec.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ErrorSpread.cpp">
-      <Filter>Source Files\TestModules</Filter>
-    </ClCompile>
-    <ClCompile Include="HiddenLayerPerc.cpp">
-      <Filter>Source Files\TestModules</Filter>
-    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DigitRecognizerWin32.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="DigitRecognizerWin32.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

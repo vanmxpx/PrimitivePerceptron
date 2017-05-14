@@ -12,11 +12,21 @@ ErrorSpreadRec er;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//digneu.step();
-	//errspr.run();
-	er.learn();
-	er.start();
+	//er.learn();
+	//er.load_weights();
+	//er.start_test();
 
+	digneu.learn();
+	//digneu.load_weights();
+	digneu.start_test();
+
+	char at;
+	cout << "Want to save weights? y/n" << endl;
+	cin >> at;
+	if (at == 'y') {
+		digneu.save_weights();
+		//er.save_weights();
+	}
 	system("pause");
 	return 0;
 }

@@ -29,3 +29,5 @@
 *.app
 
 SimplePerceptron/x64/Debug/
+
+\.vs/

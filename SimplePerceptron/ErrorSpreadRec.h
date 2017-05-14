@@ -9,16 +9,17 @@ public:
 	ErrorSpreadRec();
 
 	double analize(vec number);
-
-	void start();
-
 	void learn();
+
+	void start_test();
+	bool load_weights();
+	bool save_weights() const;
 private:
 	double normalizeAnswer(double) const;
 	static double gradFunc(double answer);
 	mat outputs;
 	mat w;
-	mat wout;
+	vec wout;
 
 	const double epoches;
 	double learn_rate;

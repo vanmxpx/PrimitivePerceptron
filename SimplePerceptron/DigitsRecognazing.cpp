@@ -1,117 +1,188 @@
 #include "stdafx.h"
 #include "DigitsRecognazing.h"
+#include <math.h>
 
-using namespace std;
+using namespace arma;
+/*presented neural network what analizing a number by reading black/white picture 3*5 with a nubmer from 0 to 9
+*network has 15 input neurons, 45 neurons by default in hidden layer and 10 output neurons to each number.
+*Sinapses binded to all next layer neurons*/
 
-DigitsRecognazing::DigitsRecognazing()
-	:bias(7), epoches(100000)
+DigitsRecognazing::DigitsRecognazing(int nr, int ep, double lr, double am)
+	: inputs(15), outputs(nr, fill::zeros),
+	w(15, nr, fill::randn), wout(nr, 10, fill::randn),
+	neur_count(nr), epoches(ep), learn_rate(lr), alpha_mom(am)
 {
-	srand(unsigned(time(nullptr)));
-	weights.set_size(15, 3);
-	weights.transform([](double val)
+	numbers = { { 1,0,1,1,1,1,1,1,1,1 },
+	{ 1,0,1,1,0,1,1,1,1,1 },
+	{ 1,1,1,1,1,1,1,1,1,1 },
+	{ 1,0,0,0,1,1,1,0,1,1 },
+	{ 0,0,0,0,0,0,0,0,0,0 },
+	{ 1,1,1,1,1,0,0,1,1,1 },
+	{ 1,0,1,1,1,1,1,0,1,1 },
+	{ 0,0,1,1,1,1,1,0,1,1 },
+	{ 1,1,1,1,1,1,1,1,1,1 },
+	{ 1,0,1,0,0,0,1,0,1,0 },
+	{ 0,0,0,0,0,0,0,0,0,0 },
+	{ 1,1,0,1,1,1,1,1,1,1 },
+	{ 1,0,1,1,0,1,1,0,1,1 },
+	{ 1,0,1,1,0,1,1,0,1,1 },
+	{ 1,1,1,1,1,1,1,1,1,1 } };
+
+	fives = { { 1,1,1,1,1,1 },
+	{ 1,1,1,1,1,1 },
+	{ 1,1,1,0,0,1 },
+	{ 1,1,1,1,1,1 },
+	{ 0,0,0,0,0,0 },
+	{ 0,0,0,0,0,0 },
+	{ 1,0,0,1,1,1 },
+	{ 1,1,1,1,1,0 },
+	{ 1,0,1,1,1,1 },
+	{ 0,0,0,0,0,0 },
+	{ 0,0,0,0,0,0 },
+	{ 0,1,1,1,1,1 },
+	{ 1,1,1,1,0,1 },
+	{ 1,1,1,1,1,1 },
+	{ 1,1,1,1,1,1 } };
+}
+
+vec DigitsRecognazing::analize(vec number)
+{
+	vec result(10, fill::zeros);
+	inputs = number;
+	double tmp;
+	for (int row = 0; row < neur_count; row++)
 	{
-		return rand() % 5;
-	});
-
-	numbers = { "111101101101111",
-				"001001001001001",
-				"111001111100111",
-				"111001111001111",
-				"101101111001001",
-				"111100111001111",
-				"111100111101111",
-				"111001001001001",
-				"111101111101111",
-				"111101111001111" };
-
-	fives = { "111100111000111",
-			  "111100010001111",
-			  "111100011001111",
-		  	  "110100111001111",
-			  "110100111001011",
-			  "111100101001111" };
+		//inputs sinapses
+		tmp = 0;
+		for (int col = 0; col < 15; col++)
+			tmp += inputs.at(col) * w.at(col, row);
+		outputs.at(row) = normalizeAnswer(tmp);
+	}
+	//hidden sinapses
+	for (int row = 0; row < 10; row++)
+	{
+		tmp = 0;
+		for (int col = 0; col < neur_count; col++)
+			tmp += outputs.at(col) * wout.at(col, row);
+		result.at(row) = normalizeAnswer(tmp);
+	}
+	return result;
 }
 
-
-DigitsRecognazing::~DigitsRecognazing()
+void DigitsRecognazing::start_test()
 {
-
-}
-
-
-void DigitsRecognazing::step()
-{
-	learning();
-	print_weights();
-
 	//Test
-	for(int i = 0; i < 10; i++)
+	for (int i = 0; i < 10; i++)
 	{
-		cout << "Is number["<< i <<"] == 5?"<< "  ";
-		print_res(process(numbers[i]));
+		cout << "This number [" << i << "] is: ";
+		vec res = analize(numbers.col(i));
+		cout << res.index_max() << " result" << endl;
 	}
 	//Control
-	for(int i = 0; i < 6; i++)
+	for (int i = 0; i < 6; i++)
 	{
-		cout << "Is fives["<< i <<"] == 5?"<< "  ";
-		print_res(process(fives[i]));
+		cout << "This number from fives[" << i << "] is: ";
+		vec res = analize(fives.col(i));
+		cout << res.index_max() << " result" << endl;
 	}
+}
+bool DigitsRecognazing::save_weights() const {
 
-
-	system("pause");
+	return w.save("digits_wghts.mat") &&
+		wout.save("digits_wghts_out.mat");
+}
+bool DigitsRecognazing::load_weights() {
+	mat loadw;
+	mat loadwout;
+	if (loadw.load("digits_wghts.mat") &&
+		loadwout.load("digits_wghts_out.mat"))
+	{
+		w = loadw;
+		wout = loadwout;
+		return true;
+	}
+	return false;
 }
 
-bool DigitsRecognazing::process(string number)
+double DigitsRecognazing::normalizeAnswer(double answer) const
 {
-	int sum = 0;
-	for (int i = 0; i < 15; i++)
-	{
-		int x = number[i] - '0';
-		int y = weights[i];
-		sum += x*y;
-	}
-	return sum > bias;
+	return 1 / (1 + exp(-answer));
+}
+double DigitsRecognazing::gradFunc(double answer)
+{
+	return(1 - answer)*answer;
 }
 
-void DigitsRecognazing::learning()
+void DigitsRecognazing::learn()
 {
-	for(int i = 0; i < epoches; i++)
+	mat delta(neur_count, 3);
+	mat grad(15, neur_count);
+	mat gradout(neur_count, 10);
+	mat wlast(15, neur_count, fill::zeros);
+	mat woutlast(neur_count, 10, fill::zeros);
+
+	vec err(10, fill::ones);
+	vec res(10);
+	vec expected(10);
+	for (int i = 0; i < epoches; i++) //&& err != 0
 	{
-		for (int num = 0; num < 10; num++)
+		for (int k = 0; k < 10; k++)
 		{
-			string diget = numbers[num];
-			bool answer = process(diget);
+			delta.fill(fill::zeros);
+			grad.fill(fill::zeros);
+			gradout.fill(fill::zeros);
+			//analize
+			res = analize(numbers.col(k));
 
-			if (num != 5 && answer)
+			//Calc errors
+			for (int e = 0; e < 10; e++)
+				expected.at(e) = k == e;
+
+			err = pow(expected - res, 2);
+
+			//
+#ifndef DEBUG
+			cout << err.at(k) << endl;
+#endif
+			//Error spread
+			//Calc deltaes
+			for (int row = 0; row < 10; row++) //OUT delta func
+				delta.at(row, 2) = (expected.at(row) - res.at(row)) * gradFunc(res.at(row));
+
+			double tmp;
+			for (int row = 0; row < neur_count; row++)
 			{
-				for (int k = 0; k < 15; k++)
-					if (diget[k] == '1')
-						weights[k] -= 1;
+				tmp = 0;
+				for (int col = 0; col < 10; col++)//summ of weights, what binded to output neuron
+					tmp += wout.at(row, col) * delta.at(col, 2);
+
+				delta.at(row, 1) = gradFunc(outputs.at(row)) * tmp;
 			}
-			else if (num == 5 && !answer)
+
+			//Calc grad
+			for (int row = 0; row < neur_count; row++)
 			{
-				for (int k = 0; k < 15; k++)
-					if (diget[k] == '1')
-						weights[k] += 1;
+				for (int col = 0; col < 15; col++)
+				{
+					if (col < 10)
+					{
+						gradout.at(row, col) = outputs.at(row) * delta(col, 2);
+						wout.at(row, col) += learn_rate * gradout.at(row, col) + alpha_mom * woutlast.at(row, col);
+					}
+					grad.at(row, col) = inputs.at(col) * delta.at(row, 1);
+					w.at(row, col) += learn_rate * grad.at(row, col) + alpha_mom * wlast.at(row, col);
+				}
 			}
+			///Uncomment to implement more layers
+			///for (int col = 0; col < 15; col++) //for input neirons
+			///{
+			///	delta.at(col, 0) = gradFunc(tmp);
+			///	for (int row = 0; row < 15; row++)
+			///		delta.at(col, 0) += w.at(row, col) * delta.at(col, 1);
+			///}
+
+			wlast = w;
+			woutlast = wout;
 		}
-	}
-}
-
-void DigitsRecognazing::print_res(bool answer)
-{
-	if(answer)
-		cout << "True" << endl;
-	else
-		cout << "False" << endl;
-}
-
-void DigitsRecognazing::print_weights()
-{
-	for(int i = 0; i < 15; i++)
-	{
-		cout << weights[i] << " ";
-		if((i + 1) % 3 == 0)
-			cout << endl;
 	}
 }
