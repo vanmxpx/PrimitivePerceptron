@@ -19,6 +19,12 @@
     <Filter Include="Header Files\TestModules">
       <UniqueIdentifier>{ace9df5f-e888-437a-ab43-e6691123331d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\MultiLayers">
+      <UniqueIdentifier>{3ae81df5-c705-4f71-af4a-db7a99d2a7c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MultiLayers">
+      <UniqueIdentifier>{cf0f8d96-3fd3-47d5-8211-7e338fe98307}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -42,6 +48,9 @@
     <ClInclude Include="HiddenLayerPerc.h">
       <Filter>Header Files\TestModules</Filter>
     </ClInclude>
+    <ClInclude Include="Crack.h">
+      <Filter>Header Files\MultiLayers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -61,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="HiddenLayerPerc.cpp">
       <Filter>Source Files\TestModules</Filter>
+    </ClCompile>
+    <ClCompile Include="Crack.cpp">
+      <Filter>Source Files\MultiLayers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

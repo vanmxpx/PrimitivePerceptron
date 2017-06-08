@@ -141,6 +141,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Crack.h" />
     <ClInclude Include="DigitsRecognazing.h" />
     <ClInclude Include="ErrorSpread.h" />
     <ClInclude Include="HiddenLayerPerc.h" />
@@ -149,6 +150,7 @@
     <ClInclude Include="ErrorSpreadRec.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Crack.cpp" />
     <ClCompile Include="DigitsRecognazing.cpp" />
     <ClCompile Include="ErrorSpread.cpp" />
     <ClCompile Include="HiddenLayerPerc.cpp" />
