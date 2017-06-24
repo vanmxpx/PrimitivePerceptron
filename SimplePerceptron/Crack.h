@@ -1,30 +1,34 @@
 #pragma once
-#include "stdafx.h"
 
 using namespace std;
 using namespace arma;
 
 class Crack
 {
-public:
-	Crack(int = 1000, int = 500, double = 0.000001, double = 0.000001);
+public: 
+	Crack(int = 50, int = 3000, double = 0.1, double = 0.00000);
 
 	vec analize(vec number);
+	void test();
 	void learn();
 	bool save_weights() const;
 
 private:	
 	static double normalizeAnswer(double answer);
 	double gradFunc(double answer);
+	double normalaizeInput(double answer);
 	void fill_tests();
 
 	mat ins;
-	mat values;
+	mat instest;
+	vec valuesP;
+	mat valuesCrack;
 
 	int epoches;
 	double learn_rate;
 	double alpha_mom;
 	int neur_count;
+	int result_count;
 
 	vec inputs;
 	vec outputs1;
@@ -33,5 +37,6 @@ private:
 	mat w1;
 	mat w2;
 	mat wout;
+
 };
 

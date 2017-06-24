@@ -4,35 +4,49 @@
 using namespace arma;
 
 Crack::Crack(int nr, int ep, double lr, double am)
-	: inputs(3), outputs1(nr, fill::zeros), outputs2(nr, fill::zeros),
-	w1(3, nr, fill::randn), w2(nr, nr, fill::randn), wout(nr, 27, fill::randn),
+	: result_count(1), inputs(5), outputs1(nr, fill::zeros), outputs2(nr, fill::zeros),
+	w1(5, nr, fill::randn), w2(nr, nr, fill::randn), wout(nr, result_count, fill::randn),
 	neur_count(nr), epoches(ep), learn_rate(lr), alpha_mom(am)
 {
 	fill_tests();
+	mat loadw1;
+	mat loadw2;
+	mat loadwout;
+	if (loadw1.load("crack_wghts_layer1.txt") &&
+		loadw2.load("crack_wghts_layer2.txt") &&
+		loadwout.load("crack_wghts_out.txt"))
+	{
+		w1 = loadw1;
+ 		w2 = loadw2;
+		wout = loadwout;
+	}
 }
 
 //logariphm
 //sin
 double Crack::normalizeAnswer(double answer)
 {
-	return log(answer + sqrt(answer*answer + 1));//1 / (1 + exp(-answer)) - 2;//
+	return 1 / (1 + exp(-answer));//log(answer + sqrt(answer*answer + 1));//
 }
 double Crack::gradFunc(double answer)
 {
-	return 1 / sqrt(answer*answer + 1);//(1 - answer)*answer; //
+	return (1 - answer)*answer; //1 / sqrt(answer*answer + 1);//
+}
+double Crack::normalaizeInput(double answer)
+{
+	return (1 - answer)*answer; //(answer - 0) / sqrt(answer*answer + 1);//
 }
 
 vec Crack::analize(vec number)
 {
-
-	vec result(27, fill::zeros);
+	vec result(result_count, fill::zeros);
 	inputs = number;
 	double tmp;
 	for (int row = 0; row < neur_count; row++)
 	{
 		//inputs sinapses
 		tmp = 0;
-		for (int col = 0; col < 3; col++)//
+		for (int col = 0; col < 5; col++)//(3 dendrids in 2000 neurons)
 			tmp += inputs.at(col) * w1.at(col, row);
 		outputs1.at(row) = normalizeAnswer(tmp);
 	}
@@ -40,83 +54,97 @@ vec Crack::analize(vec number)
 	{
 		//inputs sinapses
 		tmp = 0;
-		for (int col = 0; col < neur_count; col++)//
+		for (int col = 0; col < neur_count; col++)////(2000 dendrids in 2000 neurons)
 			tmp += outputs1.at(col) * w2.at(col, row);
 		outputs2.at(row) = normalizeAnswer(tmp);
 	}
 	//hidden sinapses
-	for (int row = 0; row < 27; row++)
+	for (int row = 0; row < result_count; row++)
 	{
 		tmp = 0;
-		for (int col = 0; col < neur_count; col++)
+		for (int col = 0; col < neur_count; col++) //(2000 dendrids in 27 neurons)
 			tmp += outputs2.at(col) * wout.at(col, row);
 		result.at(row) = normalizeAnswer(tmp);
 	}
 	return result;
 }
 
+void Crack::test()
+{
+	vec res(5);
+	for (int k = 0; k < 5; k++)
+	{
+		auto asd = instest.row(k);
+		Col<double> temp(5);
+		for (int s = 0; s < 5; s++) {
+			temp.at(s) = asd[s];
+		}
+
+		res.at(k) = analize(temp).at(0);
+	}
+	cout << "test:" << endl << res;
+}
 void Crack::learn()
 {
-	mat delta(neur_count, 3);
-	mat grad1(3, neur_count);
-	mat grad2(neur_count, neur_count);
-	mat gradout(neur_count, 27);
-	mat w1last(3, neur_count, fill::zeros);
+	mat delta(neur_count, 3); //(2000, 2000, result_count)
+	mat w1last(5, neur_count, fill::zeros);
 	mat w2last(neur_count, neur_count, fill::zeros);
-	mat woutlast(neur_count, 27, fill::zeros);
+	mat woutlast(neur_count, result_count, fill::zeros);
 
-	vec err(27, fill::ones);
-	vec res(27);
-	vec expected(27);
-	vec lastres(12, fill::zeros);
+	vec err(result_count, fill::ones);
+	vec res(result_count);
+	vec expected(result_count);
+	vec lastres(30, fill::zeros);
 	int true_results = 0;
 	for (int i = 0; i < epoches; i++) //&& err != 0
 	{
-		//test inpits count = 12
-		for (int k = 0; k < 12; k++)
+
+		cout << "------------------" << endl;
+
+		//test inpits count = 30
+		for (int k = 0; k < 28; k++)
 		{
 			delta.fill(fill::zeros);
-			grad1.fill(fill::zeros);
-			grad2.fill(fill::zeros);
-			gradout.fill(fill::zeros);
 			//analize
 			auto asd = ins.row(k);
-			Col<double> temp(3);
-			for (int s = 0; s < 3; s++) {
+			Col<double> temp(5);
+			for (int s = 0; s < 5; s++) {
 				temp.at(s) = asd[s];
 			}
 
- 			res = analize(temp);
-
-			auto asd2 = values.row(k);
-			for (int s = 0; s < 27; s++) {
-				expected.at(s) = asd2[s];
-			}
+			res = analize(temp);
+			double res2 = res.at(0);
+			double expected2;
+			//auto asd2 = valuesP.row(k);// change for crack
+			//for (int s = 0; s < result_count; s++) {
+			//	expected.at(s) = valuesP.at(k);//asd2[s];
+			//}
 			//Calc errors
 
-
-			err = pow(expected - res, 2);
+			expected2 = valuesP.at(k);
+			double err2 = (expected2 - res2) * (expected2 - res2);//pow(expected2 - res2, 2);
 			double deltaerr=0;
-			for (int e = 0; e < 27; e++)
-				deltaerr += err.at(e);
-			deltaerr /= 27;
-			if (deltaerr == 0) true_results++; if (true_results > 50) save_weights();
+			for (int e = 0; e < result_count; e++)
+				deltaerr += err2;
+			deltaerr /= result_count;
+			//if (deltaerr < 0.00001) true_results++; if (true_results > 50) save_weights();
 			double increased = deltaerr - lastres.at(k);
 #ifndef DEBUG
-			//cout << increased << ": " << deltaerr << endl;
+			cout << increased << ": " << deltaerr << ": " << res.at(0) << endl;
+			//cout << res  << endl;
 #endif
 
 			lastres.at(k) = deltaerr;
 			//Error spread
 			//Calc deltaes
-			for (int row = 0; row < 27; row++) //OUT delta func
-				delta.at(row, 2) = (expected.at(row) - res.at(row)) * gradFunc(res.at(row));
-
+			for (int row = 0; row < result_count; row++) //OUT delta func
+				//delta.at(row, 2) = (expected.at(row) - res.at(row)) * gradFunc(res.at(row));
+				delta.at(row, 2) = (expected2 - res2) * gradFunc(res2);
 			double tmp;
 			for (int row = 0; row < neur_count; row++)
 			{
 				tmp = 0;
-				for (int col = 0; col < 27; col++)//summ of weights, what binded to output neuron
+				for (int col = 0; col < result_count; col++)//summ of weights, what binded to output neuron
 					tmp += wout.at(row, col) * delta.at(col, 2);
 
 				delta.at(row, 1) = gradFunc(outputs2.at(row)) * tmp;
@@ -126,7 +154,7 @@ void Crack::learn()
 			for (int row = 0; row < neur_count; row++) //for input neirons
 			{
 				tmp = 0;
-				for (int col = 0; col < neur_count; col++)//summ of weights, what binded to output neuron
+				for (int col = 0; col < neur_count; col++)//summ of weights, what binded to 2 layer
 					tmp += w2.at(row, col) * delta.at(col, 1);
 
 				delta.at(row, 0) = gradFunc(outputs1.at(row)) * tmp;
@@ -137,19 +165,20 @@ void Crack::learn()
 			{
 				for (int col = 0; col < neur_count; col++)
 				{
-					if (col < 3) 
+					if (row < 5)
 					{
-						grad1.at(row, col) = inputs.at(col) * delta.at(row, 0);
-						w1.at(row, col) += learn_rate * grad1.at(row, col) + alpha_mom * w1last.at(row, col);
+						double grad = inputs.at(row) * delta.at(col, 0);
+						w1.at(row, col) += learn_rate * grad + alpha_mom * w1last.at(row, col);
 					}
 
-					grad2.at(row, col) = outputs1.at(row) * delta(col, 1);
-					w2.at(row, col) += learn_rate * grad2.at(row, col) + alpha_mom * w2last.at(row, col);
+					// back propagation for outputs neurons
+					double grad2 = outputs1.at(row) * delta(col, 1);
+					w2.at(row, col) += learn_rate * grad2 + alpha_mom * w2last.at(row, col);
 
-					if (col < 27) 
+					if (col < result_count) // back propagation for outputs neurons 
 					{
-						gradout.at(row, col) = outputs2.at(row) * delta(col, 2);
-						wout.at(row, col) += learn_rate * gradout.at(row, col) + alpha_mom * woutlast.at(row, col);
+						double gradout = outputs2.at(row) * delta(col, 2);
+						wout.at(row, col) += learn_rate * gradout + alpha_mom * woutlast.at(row, col);
 					}
 				}
 			}
@@ -160,167 +189,87 @@ void Crack::learn()
 			woutlast = wout;
 		}
 	}
-	cout << err << endl;
+	test();
 	system("pause");
 }
 
 bool Crack::save_weights() const {
 	return w1.save("crack_wghts_layer1.txt", raw_ascii) &&
-			w2.save("crack_wghts_layer2.txt", raw_ascii) &&
-		wout.save("crack_wghts_out_test.txt", raw_ascii);
+		w2.save("crack_wghts_layer2.txt", raw_ascii) &&
+		wout.save("crack_wghts_out.txt", raw_ascii);
 }
 
 void Crack::fill_tests()
 {
-	ins = { { 0.1, 0.3, 0.2},
-	{ 0.15, 0.3, 0.2 },
-	{ 0.2, 0.3, 0.2 },
-	{ 0.25, 0.3, 0.2 },
-	{ 0.3, 0.3, 0.2 },
-	{ 0.4, 0.3, 0.2 },
-	{ 0.1, 0.2, 0.3 },
-	{ 0.15, 0.2, 0.3 },
-	{ 0.2, 0.2, 0.3 },
-	{ 0.25, 0.2, 0.3 },
-	{ 0.3, 0.2, 0.3 },
-	{ 0.4, 0.2, 0.3 } };
-	//ins = { { 0.1, 0.0330717952017014, 6.62315508663802E-05,  //1 v1 03
-	//	7.83028333978396,0.0330717952017014,6.62315508663802E-05,7.82318451424117,
-	//	-0.00782154761929998,0.0251410268499832,-7.82540444815495,-0.00782154761929998,0.0251410268499832,-7.81841629693738 },
-	//{ 0.15, 0.0679357607228628, //1.5
-	//	0.000296726681546566,
-	//	7.64496308830708,
-	//	0.0679357607228628,
-	//	0.000296726681546566,
-	//	7.62924250683005,
-	//	-0.0162340382976152,
-	//	0.0512181398712914,
-	//	-7.63538242618908,
-	//	-0.0162340382976152,
-	//	0.0512181398712914,
-	//	-7.62013731776597 },
-	//{ 0.2, 0.103612129349022,  //2
-	//	0.000737403032085027,
-	//	7.44744728846293,
-	//	0.103612129349022,
-	//	0.000737403032085027,
-	//	7.42152238166387,
-	//	-0.0250488281642416,
-	//	0.0773768640539578,
-	//	-7.43360326365801,
-	//	-0.0250488281642416,
-	//	0.0773768640539578,
-	//	-7.40880552935934 },
-	//{ 0.25, 0.140580235128324, //2.5
-	//	0.00146286085324787,
-	//	7.23283251823147,
-	//	0.140580235128324,
-	//	0.00146286085324787,
-	//	7.19461291911509,
-	//	-0.0344444095969245,
-	//	0.103815478782331,
-	//	-7.21526985446951,
-	//	-0.0344444095969245,
-	//	0.103815478782331,
-	//	-7.17916782543725 },
-	//{ 0.3,  0.176828793955847, //3
-	//	0.00250958208753094,
-	//	7.01047827779178,
-	//	0.176828793955847,
-	//	0.00250958208753094,
-	//	6.95817130417407,
-	//	-0.0439720374081474,
-	//	0.12893583911011,
-	//	-6.99011600940281,
-	//	-0.0439720374081474,
-	//	0.12893583911011,
-	//	-6.94122891786025 },
-	//{ 0.4, 0.241892156319859, //4
-	//	0.00557360223537451,
-	//	6.57157276191062,
-	//	0.241892156319859,
-	//	0.00557360223537451,
-	//	6.48732702189448,
-	//	-0.062132300311692,
-	//	0.171316771864126,
-	//	-6.54905678943148,
-	//	-0.062132300311692,
-	//	0.171316771864126,
-	//	-6.47145837121093 },
-	//{ 0.4, 0.0271612779598871, //1
-	//	-7.77428106575329E-05,
-	//	7.80344057244169,
-	//	0.0271612779598871,
-	//	-7.77428106575329E-05,
-	//	7.80856817168302,
-	//	0.00846164591906673,
-	//	0.0357510143070612,
-	//	-7.81102920590868,
-	//	0.00846164591906673,
-	//	0.0357510143070612,
-	//	-7.8162863137342 },
-	//{ 0.15, 0.0562367738901957, //1.5
-	//	-0.000363355617674532,
-	//	7.58064255412401,
-	//	0.0562367738901957,
-	//	-0.000363355617674532,
-	//	7.59050230906744,
-	//	0.0178934036341136,
-	//	0.0747209400340365,
-	//	-7.59761287873832,
-	//	0.0178934036341136,
-	//	0.0747209400340365,
-	//	-7.60804987888082 },
-	//{ 0.2, 0.082848035422435, //2
-	//	-0.000861658972505452,
-	//	7.36274717925816,
-	//	0.082848035422435,
-	//	-0.000861658972505452,
-	//	7.37611157403538,
-	//	0.026948747875378,
-	//	0.111179218937972,
-	//	-7.38973347930841,
-	//	0.026948747875378,
-	//	0.111179218937972,
-	//	-7.40440103659184 },
-	//{ 0.25, 0.109523768573082, //2.5
-	//	-0.00166569294514041,
-	//	7.1270080433545,
-	//	0.109523768573082,
-	//	-0.00166569294514041,
-	//	7.14289770268846,
-	//	0.0365513433784486,
-	//	0.148708526155827,
-	//	-7.16581720858217,
-	//	0.0365513433784486,
-	//	0.148708526155827,
-	//	-7.18408720280977 },
-	//{ 0.3, 0.134924113395073, //3
-	//		-0.00282598266773526,
-	//		6.88090843193696,
-	//		0.134924113395073,
-	//		-0.00282598266773526,
-	//		6.89801358490621,
-	//		0.0463529454652454,
-	//		0.185675179459282,
-	//		-6.93321779107091,
-	//		0.0463529454652454,
-	//		0.185675179459282,
-	//		-6.95411282315804 },
-	//{ 0.4, 0.177678948022888, //4
-	//		-0.00625932760433212,
-	//		6.38947016299704,
-	//		0.177678948022888,
-	//		-0.00625932760433212,
-	//		6.40459739562182,
-	//		0.0652096026277897,
-	//		0.252317994837379,
-	//		-6.47258575685908,
-	//		0.0652096026277897,
-	//		0.252317994837379,
-	//		-6.49499013013757 } };
+	instest = { { 0.03, 0.3, 0.2, 1, 10 },
+		{0.06, 0.2, 0.3, 1, 10 },	
+	{ 0.12, 0.3, 0.2, 10, 1 },
+	{ 0.23, 0.3, 0.2, 1, 10 },
+	{ 0.5, 0.2, 0.3, 10, 1 } };
 
-	values = { { 0.02363, 1.56319371796451,
+	ins = {	//{ 0.05, 0.2, 0.3, 10, 1 },
+		{ 0.075, 0.2, 0.3, 10, 1 },
+		{ 0.1, 0.2, 0.3, 10, 1 },
+		{ 0.125, 0.2, 0.3, 10, 1 },
+		{ 0.15, 0.2, 0.3, 10, 1 },
+		{ 0.2, 0.2, 0.3, 10, 1 },
+		{ 0.25, 0.2, 0.3, 10, 1 },
+		{ 0.3, 0.2, 0.3, 10, 1 },
+		{ 0.4, 0.2, 0.3, 10, 1 },
+		//{ 0.05, 0.3, 0.2, 1, 10 }, //remove it for Crack
+			{0.075, 0.3, 0.2, 1, 10},
+		{ 0.1, 0.3, 0.2, 1, 10 },
+		{ 0.125, 0.3, 0.2, 1, 10 },
+	{ 0.15, 0.3, 0.2 , 1, 10 },
+	{ 0.2, 0.3, 0.2, 1, 10 },
+	{ 0.25, 0.3, 0.2, 1, 10 },
+	{ 0.3, 0.3, 0.2, 1, 10 },
+	{ 0.4, 0.3, 0.2, 1, 10 },
+	{ 0.1, 0.2, 0.3, 1, 10 },
+	{ 0.15, 0.2, 0.3, 1, 10 },
+	{ 0.2, 0.2, 0.3, 1, 10 },
+	{ 0.25, 0.2, 0.3, 1, 10 },
+	{ 0.3, 0.2, 0.3, 1, 10 },
+	{ 0.4, 0.2, 0.3, 1, 10 },
+
+	{ 0.125, 0.2, 0.3, 30, 1 },
+	{ 0.15, 0.2, 0.3, 30, 1 },
+	{ 0.2, 0.2, 0.3, 30, 1 },
+	{ 0.25, 0.2, 0.3, 30, 1 },
+	{ 0.3, 0.2, 0.3, 30, 1 },
+	{ 0.4, 0.2, 0.3, 30, 1 } };
+
+	
+	valuesP = { 				/*0.007,*/  0.01,    0.016,   0.024,   0.0315,  0.0497,  0.068,   0.084,   0.12, //0.2,0.3, 10, 1
+		/*0.0085,*/ 0.01212, 0.02439, 0.03317, 0.04971, 0.07382, 0.10874, 0.1369, 0.20389, //0.3,0.2, 1, 10
+		0.02239, 0.04807, 0.07349, 0.10134, 0.13081, 0.19091, //0.2,0.3, 1, 10
+
+		0.02, 0.037, 0.04, 0.054, 0.068, 0.089 };//0.2,0.3, 30, 1
+
+	valuesCrack = { /*{ 0.008453524845833,
+		0.0848380480238123,
+		0.312166645692774,
+		0.516193253935563,
+		0.690435806822004,
+		0.837975725366429,
+		0.962775978094076,
+		1.06833714733145,
+		1.1576192364141,
+		1.23311361398321,
+		1.29691350876918,
+		1.3507739762765,
+		1.39616369943036,
+		1.43430955097424,
+		1.46623429083954,
+		1.49278791741774,
+		1.51467338239257,
+		1.53246744371968,
+		1.54663739199852,
+		1.55755429233977,
+		1.56550327280812,
+		1.57069128047801,
+		1.57325262472705 },*/
+		{ 0.02263, 1.56319371796451,
 		1.56319304792539,
 		1.56067936249605,
 		1.55557063896382,
@@ -346,6 +295,32 @@ void Crack::fill_tests()
 		-0.157587950484647,
 		-0.0860996642674238,
 		0.555732940297477 },
+		{ 0.03317, 1.55890119935002,
+		1.55890036184866,
+		1.55640820865852,
+		1.55133790498423,
+		1.54353488880975,
+		1.53277284204781,
+		1.51874766290727,
+		1.50106918515015,
+		1.47925029169252,
+		1.45269295735179,
+		1.42067062798046,
+		1.38230620511036,
+		1.336544770248,
+		1.28212007934021,
+		1.2175138258504,
+		1.14090671895776,
+		1.05012035715578,
+		0.942547934470013,
+		0.815069220776082,
+		0.663952010343367,
+		0.484866951206427,
+		0.27405841326301,
+		0.0366655829203988,
+		-0.171593136875136,
+		-0.104879533086548,
+		0.547312504437236, },
 	{ 0.04971,1.55273648081264,
 		1.55273515232373,
 		1.55027207049377,
@@ -477,7 +452,7 @@ void Crack::fill_tests()
 			-0.424427303654504,
 			0.371906882297459 },
 		//v1 02
-	{ 0.02239,1.94503036300448,
+	{ 0.02139,1.94503036300448,
 			1.9450292757804,
 			1.94004560224907,
 			1.92992568376372,
@@ -633,4 +608,6 @@ void Crack::fill_tests()
 				-0.447772402526952,
 				0.172253865107745,
 				0.795810859298339 }};
+
+
 }
